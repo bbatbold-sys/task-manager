@@ -1214,10 +1214,10 @@ with tab1:
 
 
     # ─────────────────────────────────────────────────────────────────────────────
-    # Export CSV
+    # Export / Import CSV
     # ─────────────────────────────────────────────────────────────────────────────
     st.html("<hr style='border-color:#e5e7eb;margin:2rem 0 1rem'>")
-    exp_col, _ = st.columns([1, 4])
+    exp_col, imp_col, _ = st.columns([1, 1, 3])
     with exp_col:
         csv_data = _build_csv(all_tasks)
         st.download_button(
@@ -1227,6 +1227,40 @@ with tab1:
             mime="text/csv",
             key="export_csv",
         )
+    with imp_col:
+        uploaded = st.file_uploader("Import CSV", type="csv", label_visibility="collapsed",
+                                    key="import_csv")
+        if uploaded is not None:
+            import csv as _csv_mod
+            reader = _csv_mod.DictReader(uploaded.read().decode("utf-8").splitlines())
+            imported, skipped = 0, 0
+            existing_titles = {t.title.lower() for t in load_tasks(STORAGE_PATH)}
+            new_tasks_import = []
+            for row in reader:
+                title = row.get("title", "").strip()
+                if not title or title.lower() in existing_titles:
+                    skipped += 1
+                    continue
+                new_tasks_import.append(Task(
+                    id=next_id(STORAGE_PATH) + imported,
+                    title=title,
+                    description=row.get("description", "").strip(),
+                    due_date=row.get("due_date") or None,
+                    priority=row.get("priority", "medium") if row.get("priority") in ("high","medium","low") else "medium",
+                    status=row.get("status", "todo") if row.get("status") in ("todo","done") else "todo",
+                    project=row.get("project") or None,
+                    tags=[t.strip() for t in row.get("tags","").split(";") if t.strip()],
+                    order=next_id(STORAGE_PATH) + imported,
+                ))
+                existing_titles.add(title.lower())
+                imported += 1
+            if new_tasks_import:
+                all_existing = load_tasks(STORAGE_PATH)
+                save_tasks(all_existing + new_tasks_import, STORAGE_PATH)
+                st.success(f"Imported {imported} task(s)" + (f", skipped {skipped} duplicate(s)" if skipped else ""))
+                st.rerun()
+            elif skipped:
+                st.warning(f"All {skipped} row(s) already exist — nothing imported.")
 
 
 
