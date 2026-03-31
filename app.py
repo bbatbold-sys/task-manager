@@ -44,6 +44,7 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {
     color: #1c1c1e !important;
 }
 [data-testid="stSidebar"] { background: #ffffff !important; border-right: 1px solid #e5e7eb !important; }
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 2rem 2.5rem 4rem !important; max-width: 1400px; }
 
@@ -150,10 +151,11 @@ p, span, div, label, h1, h2, h3, h4, h5, h6,
 
 /* ── Task card ── */
 .note-card {
-    background: #ffffff; border-radius: 13px;
-    padding: 0.95rem 1.1rem; margin-bottom: 2px;
+    background: #ffffff; border-radius: 13px 13px 0 0;
+    padding: 0.95rem 1.1rem; margin-bottom: 0;
     position: relative; overflow: hidden; cursor: default;
-    border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb; border-bottom: none;
+    box-shadow: none;
     transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
     animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
 }
@@ -165,7 +167,38 @@ p, span, div, label, h1, h2, h3, h4, h5, h6,
 .note-card.p-medium::before { background: #d97706; }
 .note-card.p-low::before    { background: #16a34a; }
 .note-card.done-note        { background: #f9fafb; opacity: 0.7; }
-.note-card:hover            { transform: scale(1.003); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.note-card:hover            { transform: translateY(-1px); box-shadow: 0 -2px 12px rgba(0,0,0,0.07); }
+
+/* ── Card action bar (renders as footer via CSS adjacent sibling) ── */
+[data-testid="stMarkdown"]:has(.note-card) + [data-testid="stHorizontalBlock"] {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-top: 1px solid #f3f4f6;
+    border-radius: 0 0 13px 13px;
+    padding: 0.2rem 0.5rem 0.2rem 0.75rem;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+[data-testid="stMarkdown"]:has(.note-card) + [data-testid="stHorizontalBlock"] button {
+    background: transparent !important;
+    border: none !important;
+    color: #9ca3af !important;
+    width: auto !important;
+    height: 28px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    padding: 0 7px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    letter-spacing: 0.01em !important;
+}
+[data-testid="stMarkdown"]:has(.note-card) + [data-testid="stHorizontalBlock"] button:hover {
+    background: #f3f4f6 !important;
+    color: #1c1c1e !important;
+    transform: none !important;
+}
 
 .note-title {
     font-size: clamp(0.88rem,1.4vw,1rem);font-weight:600;
@@ -325,6 +358,43 @@ label,[data-testid="stWidgetLabel"] p {
     to   { opacity:1;transform:translateY(0); }
 }
 
+/* ── Sidebar expander buttons ── */
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+    border: none !important;
+    background: transparent !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    background: linear-gradient(135deg,#2563eb,#1d4ed8) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    padding: 0.65rem 1rem !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.02em !important;
+    margin-bottom: 0.5rem !important;
+    transition: box-shadow 0.18s ease, transform 0.18s ease !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    box-shadow: 0 4px 14px rgba(37,99,235,0.35) !important;
+    transform: translateY(-1px) !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"]:last-of-type summary {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    border: 1px solid #e5e7eb !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"]:last-of-type summary:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    background: #ececec !important;
+}
+/* Arrow icon colour */
+[data-testid="stSidebar"] [data-testid="stExpander"] summary svg {
+    fill: #fff !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"]:last-of-type summary svg {
+    fill: #374151 !important;
+}
+
 /* ── Responsive ── */
 @media(max-width:1023px) { .block-container{padding:1.5rem !important;} }
 @media(max-width:767px)  {
@@ -472,71 +542,66 @@ all_tags_global = _get_all_tags(all_tasks_raw)
 all_projects_global = _get_all_projects(all_tasks_raw)
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-hdr">New Task</div>', unsafe_allow_html=True)
-    with st.form("add_task_form", clear_on_submit=True):
-        title_input = st.text_input(
-            "Title", placeholder="Task title…", label_visibility="collapsed",
-            key="new_task_title"
-        )
-        description_input = st.text_area(
-            "Description", height=70, placeholder="Add a note…", label_visibility="collapsed"
-        )
-        ca, cb = st.columns(2)
-        due_date_input = ca.date_input("Due", value=None)
-        priority_input = cb.selectbox("Priority", ["medium", "high", "low"])
-        cc, cd = st.columns(2)
-        project_input = cc.text_input("Project", placeholder="Project…")
-        recurring_input = cd.selectbox("Repeat", ["none", "daily", "weekly", "monthly"])
-        tags_input = st.multiselect("Tags (pick existing)", options=all_tags_global)
-        new_tags_input = st.text_input("New tags (comma-separated)", placeholder="work, urgent…")
-        subtasks_input = st.text_area("Subtasks (one per line)", height=60, placeholder="Step 1\nStep 2")
-        submitted = st.form_submit_button("＋ Add Task", use_container_width=True)
-
-    if submitted:
-        if not title_input.strip():
-            st.error("Title is required.")
-        else:
-            tid = next_id(STORAGE_PATH)
-            typed = [t.strip() for t in new_tags_input.split(",") if t.strip()]
-            raw_tags = list(dict.fromkeys(tags_input + typed))
-            raw_subtasks = [Subtask(text=s.strip()) for s in subtasks_input.splitlines() if s.strip()]
-            t = Task(
-                id=tid,
-                title=title_input.strip(),
-                description=description_input.strip(),
-                due_date=str(due_date_input) if due_date_input else None,
-                priority=priority_input,
-                tags=raw_tags,
-                subtasks=raw_subtasks,
-                project=project_input.strip() or None,
-                recurring=recurring_input if recurring_input != "none" else None,
-                order=tid,
+    # ── New Task ──────────────────────────────────────────────────────────────
+    with st.expander("＋  New Task", expanded=False):
+        with st.form("add_task_form", clear_on_submit=True):
+            title_input = st.text_input(
+                "Title", placeholder="Task title…", label_visibility="collapsed",
+                key="new_task_title"
             )
-            tasks = load_tasks(STORAGE_PATH)
-            tasks.append(t)
-            save_tasks(tasks, STORAGE_PATH)
-            st.rerun()
+            description_input = st.text_area(
+                "Description", height=70, placeholder="Add a note…", label_visibility="collapsed"
+            )
+            ca, cb = st.columns(2)
+            due_date_input = ca.date_input("Due", value=None)
+            priority_input = cb.selectbox("Priority", ["medium", "high", "low"])
+            cc, cd = st.columns(2)
+            project_input = cc.text_input("Project", placeholder="Project…")
+            recurring_input = cd.selectbox("Repeat", ["none", "daily", "weekly", "monthly"])
+            tags_input = st.multiselect("Tags (pick existing)", options=all_tags_global)
+            new_tags_input = st.text_input("New tags (comma-separated)", placeholder="work, urgent…")
+            subtasks_input = st.text_area("Subtasks (one per line)", height=60, placeholder="Step 1\nStep 2")
+            submitted = st.form_submit_button("＋ Add Task", use_container_width=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-hdr">Filters & View</div>', unsafe_allow_html=True)
+        if submitted:
+            if not title_input.strip():
+                st.error("Title is required.")
+            else:
+                tid = next_id(STORAGE_PATH)
+                typed = [t.strip() for t in new_tags_input.split(",") if t.strip()]
+                raw_tags = list(dict.fromkeys(tags_input + typed))
+                raw_subtasks = [Subtask(text=s.strip()) for s in subtasks_input.splitlines() if s.strip()]
+                t = Task(
+                    id=tid,
+                    title=title_input.strip(),
+                    description=description_input.strip(),
+                    due_date=str(due_date_input) if due_date_input else None,
+                    priority=priority_input,
+                    tags=raw_tags,
+                    subtasks=raw_subtasks,
+                    project=project_input.strip() or None,
+                    recurring=recurring_input if recurring_input != "none" else None,
+                    order=tid,
+                )
+                tasks = load_tasks(STORAGE_PATH)
+                tasks.append(t)
+                save_tasks(tasks, STORAGE_PATH)
+                st.rerun()
 
-    fp = st.selectbox("Priority", ["All priorities", "High", "Medium", "Low"])
-    sq = st.text_input("Search", placeholder="🔍  Search…", label_visibility="collapsed")
+    # ── Search & Filters ──────────────────────────────────────────────────────
+    with st.expander("🔍  Search & Filters", expanded=False):
+        sq      = st.text_input("Search", placeholder="Search tasks…", label_visibility="collapsed")
+        fp      = st.selectbox("Priority", ["All priorities", "High", "Medium", "Low"])
+        fp_proj = st.selectbox("Project",  ["All projects"] + all_projects_global)
+        fp_tag  = st.selectbox("Tag",      ["All tags"]     + all_tags_global)
+        today_only    = st.checkbox("Today view (due today)")
+        show_archive  = st.checkbox("Show archive")
+        group_by_proj = st.checkbox("Group by project")
+        st.markdown('<div class="sidebar-hdr" style="margin:0.6rem 0 0.2rem;">Sort</div>', unsafe_allow_html=True)
+        sort_by = st.selectbox("Sort by", ["Priority", "Due date", "Created", "Title", "Manual"],
+                               label_visibility="collapsed")
 
-    project_filter_opts = ["All projects"] + all_projects_global
-    fp_proj = st.selectbox("Project", project_filter_opts)
-
-    tag_filter_opts = ["All tags"] + all_tags_global
-    fp_tag = st.selectbox("Tag", tag_filter_opts)
-
-    today_only = st.checkbox("Today view (due today)")
-    show_archive = st.checkbox("Show archive")
-    group_by_proj = st.checkbox("Group by project")
-
-    st.markdown('<div class="sidebar-hdr" style="margin-top:1rem;">Sort</div>', unsafe_allow_html=True)
-    sort_by = st.selectbox("Sort by", ["Priority", "Due date", "Created", "Title", "Manual"])
-
-    st.markdown("<hr style='border-color:#e5e7eb;margin:1rem 0'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color:#e5e7eb;margin:0.75rem 0'>", unsafe_allow_html=True)
 
     # ── Pomodoro ──────────────────────────────────────────────────────────────
     st.markdown('<div class="sidebar-hdr">Pomodoro Timer</div>', unsafe_allow_html=True)
@@ -751,407 +816,519 @@ st.html(f"""
 """)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Bulk action bar
-# ─────────────────────────────────────────────────────────────────────────────
-if st.session_state.bulk_selected:
-    sel_count = len(st.session_state.bulk_selected)
-    st.html(f'<div class="bulk-bar"><span class="bulk-bar-text">{sel_count} task(s) selected</span></div>')
-    bc1, bc2, bc3, bc4 = st.columns([1, 1, 1, 3])
-    if bc1.button("✓ Done", key="bulk_done"):
-        tasks_all = load_tasks(STORAGE_PATH)
-        new_tasks = []
-        for t in tasks_all:
-            if t.id in st.session_state.bulk_selected:
-                t.status = "done"
-                t.updated_at = _now_iso()
-                # Handle recurring
-                if t.recurring and t.status == "done":
-                    next_due = _next_due(t.due_date or today_str, t.recurring)
-                    new_t = Task(
-                        id=next_id(STORAGE_PATH),
-                        title=t.title, description=t.description,
-                        due_date=next_due, priority=t.priority,
-                        tags=list(t.tags), subtasks=[Subtask(text=s.text) for s in t.subtasks],
-                        recurring=t.recurring, project=t.project, order=t.order,
-                    )
-                    new_tasks.append(new_t)
-            tasks_all_updated = tasks_all
-        tasks_all = load_tasks(STORAGE_PATH)
-        for t in tasks_all:
-            if t.id in st.session_state.bulk_selected:
-                t.status = "done"
-                t.updated_at = _now_iso()
-        save_tasks(tasks_all + new_tasks, STORAGE_PATH)
-        st.session_state.bulk_selected = set()
-        st.rerun()
-    if bc2.button("📦 Archive", key="bulk_archive"):
-        tasks_all = load_tasks(STORAGE_PATH)
-        for t in tasks_all:
-            if t.id in st.session_state.bulk_selected:
-                t.archived = True
-                t.updated_at = _now_iso()
-        save_tasks(tasks_all, STORAGE_PATH)
-        st.session_state.bulk_selected = set()
-        st.rerun()
-    if bc3.button("🗑 Delete", key="bulk_delete"):
-        tasks_all = load_tasks(STORAGE_PATH)
-        tasks_all = [t for t in tasks_all if t.id not in st.session_state.bulk_selected]
-        save_tasks(tasks_all, STORAGE_PATH)
-        st.session_state.bulk_selected = set()
-        st.rerun()
-    if bc4.button("✕ Clear selection", key="bulk_clear"):
-        st.session_state.bulk_selected = set()
-        st.rerun()
+
+# Calendar session state
+if "cal_year" not in st.session_state:
+    st.session_state.cal_year = today_date.year
+if "cal_month" not in st.session_state:
+    st.session_state.cal_month = today_date.month
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Card renderer
+# Tabs
 # ─────────────────────────────────────────────────────────────────────────────
-def _he(s: str) -> str:
-    """HTML-escape a string for safe injection into HTML attributes/text."""
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+tab1, tab2 = st.tabs(["📋  Tasks", "📅  Calendar"])
+
+with tab1:
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Bulk action bar
+    # ─────────────────────────────────────────────────────────────────────────────
+    if st.session_state.bulk_selected:
+        sel_count = len(st.session_state.bulk_selected)
+        st.html(f'<div class="bulk-bar"><span class="bulk-bar-text">{sel_count} task(s) selected</span></div>')
+        bc1, bc2, bc3, bc4 = st.columns([1, 1, 1, 3])
+        if bc1.button("✓ Done", key="bulk_done"):
+            tasks_all = load_tasks(STORAGE_PATH)
+            new_tasks = []
+            for t in tasks_all:
+                if t.id in st.session_state.bulk_selected:
+                    t.status = "done"
+                    t.updated_at = _now_iso()
+                    # Handle recurring
+                    if t.recurring and t.status == "done":
+                        next_due = _next_due(t.due_date or today_str, t.recurring)
+                        new_t = Task(
+                            id=next_id(STORAGE_PATH),
+                            title=t.title, description=t.description,
+                            due_date=next_due, priority=t.priority,
+                            tags=list(t.tags), subtasks=[Subtask(text=s.text) for s in t.subtasks],
+                            recurring=t.recurring, project=t.project, order=t.order,
+                        )
+                        new_tasks.append(new_t)
+                tasks_all_updated = tasks_all
+            tasks_all = load_tasks(STORAGE_PATH)
+            for t in tasks_all:
+                if t.id in st.session_state.bulk_selected:
+                    t.status = "done"
+                    t.updated_at = _now_iso()
+            save_tasks(tasks_all + new_tasks, STORAGE_PATH)
+            st.session_state.bulk_selected = set()
+            st.rerun()
+        if bc2.button("📦 Archive", key="bulk_archive"):
+            tasks_all = load_tasks(STORAGE_PATH)
+            for t in tasks_all:
+                if t.id in st.session_state.bulk_selected:
+                    t.archived = True
+                    t.updated_at = _now_iso()
+            save_tasks(tasks_all, STORAGE_PATH)
+            st.session_state.bulk_selected = set()
+            st.rerun()
+        if bc3.button("🗑 Delete", key="bulk_delete"):
+            tasks_all = load_tasks(STORAGE_PATH)
+            tasks_all = [t for t in tasks_all if t.id not in st.session_state.bulk_selected]
+            save_tasks(tasks_all, STORAGE_PATH)
+            st.session_state.bulk_selected = set()
+            st.rerun()
+        if bc4.button("✕ Clear selection", key="bulk_clear"):
+            st.session_state.bulk_selected = set()
+            st.rerun()
 
 
-def render_card(task: Task, all_tags: list, is_manual: bool = False):
-    is_done = task.status == "done"
-    title_cls = "note-title crossed" if is_done else "note-title"
-    card_cls = f"note-card p-{task.priority} {'done-note' if is_done else ''}"
-    _desc = _he(task.description).replace("\n", " ").replace("\r", "")
-    body_html = f'<div class="note-body">{_desc}</div>' if task.description else ""
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Card renderer
+    # ─────────────────────────────────────────────────────────────────────────────
+    def _he(s: str) -> str:
+        """HTML-escape a string for safe injection into HTML attributes/text."""
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
-    # Due chip
-    due_html = ""
-    if task.due_date:
-        try:
-            d = datetime.strptime(task.due_date, "%Y-%m-%d").date()
-            overdue = d < today_date and not is_done
-            cls_ = "nc-overdue" if overdue else "nc-due"
-            icon = "⚠︎ " if overdue else "⏰ "
-            due_html = f'<span class="note-chip {cls_}">{icon}{task.due_date}</span>'
-        except ValueError:
-            pass
 
-    priority_html = f'<span class="note-chip nc-{task.priority}">{task.priority.capitalize()}</span>'
+    def render_card(task: Task, all_tags: list, is_manual: bool = False):
+        is_done = task.status == "done"
+        title_cls = "note-title crossed" if is_done else "note-title"
+        card_cls = f"note-card p-{task.priority} {'done-note' if is_done else ''}"
+        _desc = _he(task.description).replace("\n", " ").replace("\r", "")
+        body_html = f'<div class="note-body">{_desc}</div>' if task.description else ""
 
-    recurring_html = ""
-    if task.recurring:
-        recurring_html = f'<span class="note-chip nc-recurring">↻ {task.recurring}</span>'
+        # Due chip
+        due_html = ""
+        if task.due_date:
+            try:
+                d = datetime.strptime(task.due_date, "%Y-%m-%d").date()
+                overdue = d < today_date and not is_done
+                cls_ = "nc-overdue" if overdue else "nc-due"
+                icon = "⚠︎ " if overdue else "⏰ "
+                due_html = f'<span class="note-chip {cls_}">{icon}{task.due_date}</span>'
+            except ValueError:
+                pass
 
-    # Tags
-    tags_html = ""
-    for tag in task.tags:
-        bg, fg = _tag_style(tag, all_tags)
-        tags_html += f'<span class="tag-chip" style="background:{bg};color:{fg};">{_he(tag)}</span>'
+        priority_html = f'<span class="note-chip nc-{task.priority}">{task.priority.capitalize()}</span>'
 
-    # Project badge
-    project_html = ""
-    if task.project:
-        project_html = f'<span class="project-badge">◈ {_he(task.project)}</span>'
+        recurring_html = ""
+        if task.recurring:
+            recurring_html = f'<span class="note-chip nc-recurring">↻ {task.recurring}</span>'
 
-    # Subtask progress
-    progress_html = ""
-    if task.subtasks:
-        done_sub = sum(1 for s in task.subtasks if s.done)
-        total_sub = len(task.subtasks)
-        pct = int((done_sub / total_sub) * 100) if total_sub else 0
-        progress_html = (
-            f'<div class="subtask-progress-wrap">'
-            f'<div class="subtask-progress-bar-bg">'
-            f'<div class="subtask-progress-bar-fill" style="width:{pct}%;"></div>'
+        # Tags
+        tags_html = ""
+        for tag in task.tags:
+            bg, fg = _tag_style(tag, all_tags)
+            tags_html += f'<span class="tag-chip" style="background:{bg};color:{fg};">{_he(tag)}</span>'
+
+        # Project badge
+        project_html = ""
+        if task.project:
+            project_html = f'<span class="project-badge">◈ {_he(task.project)}</span>'
+
+        # Subtask progress
+        progress_html = ""
+        if task.subtasks:
+            done_sub = sum(1 for s in task.subtasks if s.done)
+            total_sub = len(task.subtasks)
+            pct = int((done_sub / total_sub) * 100) if total_sub else 0
+            progress_html = (
+                f'<div class="subtask-progress-wrap">'
+                f'<div class="subtask-progress-bar-bg">'
+                f'<div class="subtask-progress-bar-fill" style="width:{pct}%;"></div>'
+                f'</div>'
+                f'<div class="subtask-progress-label">{done_sub}/{total_sub} subtasks</div>'
+                f'</div>'
+            )
+
+        card_html = (
+            f'<div class="{card_cls}">'
+            f'<div class="{title_cls}">{_he(task.title)}</div>'
+            f'{body_html}'
+            f'<div class="note-footer">'
+            f'{priority_html}{due_html}{recurring_html}{tags_html}{project_html}'
+            f'<span class="note-id">#{task.id:03d}</span>'
             f'</div>'
-            f'<div class="subtask-progress-label">{done_sub}/{total_sub} subtasks</div>'
+            f'{progress_html}'
             f'</div>'
         )
 
-    card_html = (
-        f'<div class="{card_cls}">'
-        f'<div class="{title_cls}">{_he(task.title)}</div>'
-        f'{body_html}'
-        f'<div class="note-footer">'
-        f'{priority_html}{due_html}{recurring_html}{tags_html}{project_html}'
-        f'<span class="note-id">#{task.id:03d}</span>'
-        f'</div>'
-        f'{progress_html}'
-        f'</div>'
-    )
-
-    # ── Columns ──────────────────────────────────────────────────────────────
-    if is_manual:
-        c_card, c_done, c_up, c_dn, c_edit, c_del = st.columns(
-            [0.55, 0.09, 0.08, 0.08, 0.10, 0.10]
-        )
-    else:
-        c_card, c_done, c_edit, c_del = st.columns([0.68, 0.11, 0.11, 0.10])
-
-    with c_card:
+        # ── Full-width card ───────────────────────────────────────────────────────
         st.markdown(card_html, unsafe_allow_html=True)
 
-    with c_done:
-        st.markdown('<div style="height:0.6rem"></div>', unsafe_allow_html=True)
-        if is_done:
-            if st.button("↩", key=f"undo_{task.id}", help="Undo"):
-                st.session_state["_status_action"] = {"id": task.id, "status": "todo"}
-        else:
-            if st.button("✓", key=f"done_{task.id}", help="Mark done"):
-                st.session_state["_status_action"] = {"id": task.id, "status": "done"}
-
-    if is_manual:
-        with c_up:
-            st.markdown('<div style="height:0.6rem"></div>', unsafe_allow_html=True)
-            if st.button("↑", key=f"up_{task.id}", help="Move up"):
-                tasks_all = load_tasks(STORAGE_PATH)
-                same_status = [t for t in tasks_all if t.status == task.status and not t.archived]
-                same_status_sorted = sorted(same_status, key=lambda x: x.order)
-                idx = next((i for i, t in enumerate(same_status_sorted) if t.id == task.id), None)
-                if idx is not None and idx > 0:
-                    a, b = same_status_sorted[idx - 1], same_status_sorted[idx]
-                    a.order, b.order = b.order, a.order
-                    update_task(a, STORAGE_PATH)
-                    update_task(b, STORAGE_PATH)
-                st.rerun()
-
-        with c_dn:
-            st.markdown('<div style="height:0.6rem"></div>', unsafe_allow_html=True)
-            if st.button("↓", key=f"dn_{task.id}", help="Move down"):
-                tasks_all = load_tasks(STORAGE_PATH)
-                same_status = [t for t in tasks_all if t.status == task.status and not t.archived]
-                same_status_sorted = sorted(same_status, key=lambda x: x.order)
-                idx = next((i for i, t in enumerate(same_status_sorted) if t.id == task.id), None)
-                if idx is not None and idx < len(same_status_sorted) - 1:
-                    a, b = same_status_sorted[idx], same_status_sorted[idx + 1]
-                    a.order, b.order = b.order, a.order
-                    update_task(a, STORAGE_PATH)
-                    update_task(b, STORAGE_PATH)
-                st.rerun()
-
-    with c_edit:
-        st.markdown('<div style="height:0.6rem"></div>', unsafe_allow_html=True)
-        if st.button("✎", key=f"edit_{task.id}", help="Edit"):
-            st.session_state[f"ed_{task.id}"] = not st.session_state.get(f"ed_{task.id}", False)
-            st.rerun()
-
-    with c_del:
-        st.markdown('<div style="height:0.6rem"></div>', unsafe_allow_html=True)
-        if st.button("⌫", key=f"del_{task.id}", help="Delete"):
-            delete_task(task.id, STORAGE_PATH)
-            st.session_state.bulk_selected.discard(task.id)
-            st.rerun()
-
-    # ── Subtasks + Notes expander (level-2, inside render_card) ──────────────
-    has_subtasks = bool(task.subtasks)
-    has_notes = bool(task.notes)
-
-    if has_subtasks or has_notes:
-        exp_label_parts = []
-        if has_subtasks:
-            done_sub = sum(1 for s in task.subtasks if s.done)
-            exp_label_parts.append(f"Subtasks ({done_sub}/{len(task.subtasks)})")
-        if has_notes:
-            exp_label_parts.append(f"Notes ({len(task.notes)})")
-        exp_label = " · ".join(exp_label_parts)
-
-        with st.expander(exp_label, expanded=False):
-            # Subtasks
-
-            if has_subtasks:
-                st.markdown("**Checklist**")
-                for i, sub in enumerate(task.subtasks):
-                    checked = st.checkbox(
-                        sub.text, value=sub.done, key=f"sub_{task.id}_{i}"
-                    )
-                    if checked != sub.done:
-                        task.subtasks[i].done = checked
-                        task.updated_at = _now_iso()
-                        update_task(task, STORAGE_PATH)
-                        st.rerun()
-
-            # Add subtask inline
-            with st.form(f"add_sub_{task.id}", clear_on_submit=True):
-                new_sub = st.text_input("Add subtask", placeholder="New subtask…", key=f"newsub_{task.id}")
-                if st.form_submit_button("＋ Subtask"):
-                    if new_sub.strip():
-                        task.subtasks.append(Subtask(text=new_sub.strip()))
-                        task.updated_at = _now_iso()
-                        update_task(task, STORAGE_PATH)
-                        st.rerun()
-
-            st.markdown("---")
-
-            # Notes
-            if has_notes:
-                st.markdown("**Notes**")
-                for note in task.notes:
-                    st.html(
-                        f'<div style="background:#f9fafb;border-radius:8px;padding:0.5rem 0.75rem;'
-                        f'margin-bottom:0.4rem;font-size:0.8rem;">'
-                        f'<span style="color:#9ca3af;font-size:0.65rem;">{note.created_at}</span><br>'
-                        f'{note.text}</div>'
-                    )
-
-            with st.form(f"add_note_{task.id}", clear_on_submit=True):
-                new_note = st.text_area("Add note", height=60, placeholder="Write a note…", key=f"newnote_{task.id}")
-                if st.form_submit_button("＋ Note"):
-                    if new_note.strip():
-                        task.notes.append(TaskNote(text=new_note.strip()))
-                        task.updated_at = _now_iso()
-                        update_task(task, STORAGE_PATH)
-                        st.rerun()
-
-            st.markdown("---")
-
-    # ── Time tracking (outside expander so buttons always work) ──────────────
-    total_s = _total_tracked_seconds(task)
-    running = task.id in st.session_state.timers
-    tc1, tc2 = st.columns([0.75, 0.25])
-    with tc1:
+        # ── Action bar (adjacent sibling → styled as card footer via CSS) ────────
+        total_s = _total_tracked_seconds(task)
+        running = task.id in st.session_state.timers
         if running:
-            start_iso = st.session_state.timers[task.id]
+            _start_iso = st.session_state.timers[task.id]
             try:
-                elapsed = int((datetime.now() - datetime.fromisoformat(start_iso)).total_seconds())
+                _elapsed = int((datetime.now() - datetime.fromisoformat(_start_iso)).total_seconds())
             except Exception:
-                elapsed = 0
-            st.html(f'<div class="time-track-row time-running">⏱ {_fmt_duration(elapsed)} running &nbsp;·&nbsp; total {_fmt_duration(total_s)}</div>')
+                _elapsed = 0
+            _tlabel = f"⏱ {_fmt_duration(_elapsed)}"
         elif total_s > 0:
-            st.html(f'<div class="time-track-row">⏱ {_fmt_duration(total_s)} tracked</div>')
-    with tc2:
-        if running:
-            if st.button("⏹ Stop", key=f"stop_timer_{task.id}"):
-                start_iso = st.session_state.timers.pop(task.id)
-                entry = TimeEntry(start=start_iso, end=_now_iso())
-                task.time_entries.append(entry)
+            _tlabel = f"⏱ {_fmt_duration(total_s)}"
+        else:
+            _tlabel = ""
+
+        if is_manual:
+            _ac = st.columns([0.07, 0.07, 0.16, 0.14, 0.14, 0.28, 0.14])
+            _c_up, _c_dn, _c_done, _c_edit, _c_del, _c_ti, _c_tb = _ac
+        else:
+            _ac = st.columns([0.18, 0.16, 0.16, 0.36, 0.14])
+            _c_done, _c_edit, _c_del, _c_ti, _c_tb = _ac
+
+        if is_manual:
+            with _c_up:
+                if st.button("↑", key=f"up_{task.id}", help="Move up"):
+                    tasks_all = load_tasks(STORAGE_PATH)
+                    same_status = [t for t in tasks_all if t.status == task.status and not t.archived]
+                    same_status_sorted = sorted(same_status, key=lambda x: x.order)
+                    idx = next((i for i, t in enumerate(same_status_sorted) if t.id == task.id), None)
+                    if idx is not None and idx > 0:
+                        a, b = same_status_sorted[idx - 1], same_status_sorted[idx]
+                        a.order, b.order = b.order, a.order
+                        update_task(a, STORAGE_PATH)
+                        update_task(b, STORAGE_PATH)
+                    st.rerun()
+            with _c_dn:
+                if st.button("↓", key=f"dn_{task.id}", help="Move down"):
+                    tasks_all = load_tasks(STORAGE_PATH)
+                    same_status = [t for t in tasks_all if t.status == task.status and not t.archived]
+                    same_status_sorted = sorted(same_status, key=lambda x: x.order)
+                    idx = next((i for i, t in enumerate(same_status_sorted) if t.id == task.id), None)
+                    if idx is not None and idx < len(same_status_sorted) - 1:
+                        a, b = same_status_sorted[idx], same_status_sorted[idx + 1]
+                        a.order, b.order = b.order, a.order
+                        update_task(a, STORAGE_PATH)
+                        update_task(b, STORAGE_PATH)
+                    st.rerun()
+
+        with _c_done:
+            if is_done:
+                if st.button("↩ Undo", key=f"undo_{task.id}"):
+                    st.session_state["_status_action"] = {"id": task.id, "status": "todo"}
+            else:
+                if st.button("✓ Done", key=f"done_{task.id}"):
+                    st.session_state["_status_action"] = {"id": task.id, "status": "done"}
+        with _c_edit:
+            if st.button("✎ Edit", key=f"edit_{task.id}"):
+                st.session_state[f"ed_{task.id}"] = not st.session_state.get(f"ed_{task.id}", False)
+                st.rerun()
+        with _c_del:
+            if st.button("⌫ Del", key=f"del_{task.id}"):
+                delete_task(task.id, STORAGE_PATH)
+                st.session_state.bulk_selected.discard(task.id)
+                st.rerun()
+        with _c_ti:
+            if _tlabel:
+                _cls = "time-track-row time-running" if running else "time-track-row"
+                st.html(f'<div class="{_cls}" style="padding:0.15rem 0;font-size:0.7rem;">{_tlabel}</div>')
+        with _c_tb:
+            if running:
+                if st.button("⏹ Stop", key=f"stop_timer_{task.id}"):
+                    _start_iso = st.session_state.timers.pop(task.id)
+                    entry = TimeEntry(start=_start_iso, end=_now_iso())
+                    task.time_entries.append(entry)
+                    task.updated_at = _now_iso()
+                    update_task(task, STORAGE_PATH)
+                    st.rerun()
+            else:
+                if st.button("▶", key=f"start_timer_{task.id}", help="Start timer"):
+                    st.session_state.timers[task.id] = _now_iso()
+                    st.rerun()
+
+        # ── Subtasks + Notes expander (level-2, inside render_card) ──────────────
+        has_subtasks = bool(task.subtasks)
+        has_notes = bool(task.notes)
+
+        if has_subtasks or has_notes:
+            exp_label_parts = []
+            if has_subtasks:
+                done_sub = sum(1 for s in task.subtasks if s.done)
+                exp_label_parts.append(f"Subtasks ({done_sub}/{len(task.subtasks)})")
+            if has_notes:
+                exp_label_parts.append(f"Notes ({len(task.notes)})")
+            exp_label = " · ".join(exp_label_parts)
+
+            with st.expander(exp_label, expanded=False):
+                # Subtasks
+
+                if has_subtasks:
+                    st.markdown("**Checklist**")
+                    for i, sub in enumerate(task.subtasks):
+                        checked = st.checkbox(
+                            sub.text, value=sub.done, key=f"sub_{task.id}_{i}"
+                        )
+                        if checked != sub.done:
+                            task.subtasks[i].done = checked
+                            task.updated_at = _now_iso()
+                            update_task(task, STORAGE_PATH)
+                            st.rerun()
+
+                # Add subtask inline
+                with st.form(f"add_sub_{task.id}", clear_on_submit=True):
+                    new_sub = st.text_input("Add subtask", placeholder="New subtask…", key=f"newsub_{task.id}")
+                    if st.form_submit_button("＋ Subtask"):
+                        if new_sub.strip():
+                            task.subtasks.append(Subtask(text=new_sub.strip()))
+                            task.updated_at = _now_iso()
+                            update_task(task, STORAGE_PATH)
+                            st.rerun()
+
+                st.markdown("---")
+
+                # Notes
+                if has_notes:
+                    st.markdown("**Notes**")
+                    for note in task.notes:
+                        st.html(
+                            f'<div style="background:#f9fafb;border-radius:8px;padding:0.5rem 0.75rem;'
+                            f'margin-bottom:0.4rem;font-size:0.8rem;">'
+                            f'<span style="color:#9ca3af;font-size:0.65rem;">{note.created_at}</span><br>'
+                            f'{note.text}</div>'
+                        )
+
+                with st.form(f"add_note_{task.id}", clear_on_submit=True):
+                    new_note = st.text_area("Add note", height=60, placeholder="Write a note…", key=f"newnote_{task.id}")
+                    if st.form_submit_button("＋ Note"):
+                        if new_note.strip():
+                            task.notes.append(TaskNote(text=new_note.strip()))
+                            task.updated_at = _now_iso()
+                            update_task(task, STORAGE_PATH)
+                            st.rerun()
+
+                st.markdown("---")
+
+        # ── Edit panel ────────────────────────────────────────────────────────────
+        if st.session_state.get(f"ed_{task.id}"):
+            st.html(f"""
+            <div style="background:#f0f2f5;border-radius:13px;padding:1.1rem 1.2rem;
+                        margin:0.25rem 0 0.75rem;border:1px solid #e5e7eb;">
+                <span style="font-size:0.7rem;font-weight:700;color:#6b7280;
+                             text-transform:uppercase;letter-spacing:0.08em;">
+                    Editing #{task.id:03d}
+                </span>
+            </div>""")
+            with st.form(f"ef_{task.id}"):
+                e1, e2, e3 = st.columns([2, 1, 1])
+                nt = e1.text_input("Title", value=task.title)
+                np = e2.selectbox(
+                    "Priority", ["medium", "high", "low"],
+                    index=["medium", "high", "low"].index(task.priority)
+                )
+                dv = datetime.strptime(task.due_date, "%Y-%m-%d").date() if task.due_date else None
+                nd = e3.date_input("Due date", value=dv)
+                nb = st.text_area("Note", value=task.description, height=70)
+
+                f1, f2 = st.columns(2)
+                n_proj = f1.text_input("Project", value=task.project or "")
+                rec_opts = ["none", "daily", "weekly", "monthly"]
+                rec_val = task.recurring if task.recurring else "none"
+                n_rec = f2.selectbox("Repeat", rec_opts, index=rec_opts.index(rec_val))
+
+                _tag_opts = sorted(set(all_tags_global + list(task.tags)))
+                n_tags = st.multiselect("Tags (pick existing)", options=_tag_opts, default=list(task.tags))
+                n_new_tags = st.text_input("Add new tags (comma-separated)", placeholder="tag1, tag2…", key=f"newtags_{task.id}")
+
+                sc, cc, ac = st.columns(3)
+                sv = sc.form_submit_button("Save", use_container_width=True)
+                cn = cc.form_submit_button("Cancel", use_container_width=True)
+                arch = ac.form_submit_button(
+                    "Archive" if not task.archived else "Unarchive",
+                    use_container_width=True
+                )
+
+            if sv:
+                task.title = nt.strip() or task.title
+                task.description = nb.strip()
+                task.priority = np
+                task.due_date = str(nd) if nd else None
+                task.project = n_proj.strip() or None
+                task.recurring = n_rec if n_rec != "none" else None
+                _typed_tags = [t.strip() for t in n_new_tags.split(",") if t.strip()]
+                task.tags = list(dict.fromkeys(n_tags + _typed_tags))
                 task.updated_at = _now_iso()
                 update_task(task, STORAGE_PATH)
+                st.session_state[f"ed_{task.id}"] = False
                 st.rerun()
-        else:
-            if st.button("▶ Start", key=f"start_timer_{task.id}"):
-                st.session_state.timers[task.id] = _now_iso()
+            if cn:
+                st.session_state[f"ed_{task.id}"] = False
+                st.rerun()
+            if arch:
+                task.archived = not task.archived
+                task.updated_at = _now_iso()
+                update_task(task, STORAGE_PATH)
+                st.session_state[f"ed_{task.id}"] = False
                 st.rerun()
 
-    # ── Edit panel ────────────────────────────────────────────────────────────
-    if st.session_state.get(f"ed_{task.id}"):
-        st.html(f"""
-        <div style="background:#f0f2f5;border-radius:13px;padding:1.1rem 1.2rem;
-                    margin:0.25rem 0 0.75rem;border:1px solid #e5e7eb;">
-            <span style="font-size:0.7rem;font-weight:700;color:#6b7280;
-                         text-transform:uppercase;letter-spacing:0.08em;">
-                Editing #{task.id:03d}
-            </span>
-        </div>""")
-        with st.form(f"ef_{task.id}"):
-            e1, e2, e3 = st.columns([2, 1, 1])
-            nt = e1.text_input("Title", value=task.title)
-            np = e2.selectbox(
-                "Priority", ["medium", "high", "low"],
-                index=["medium", "high", "low"].index(task.priority)
-            )
-            dv = datetime.strptime(task.due_date, "%Y-%m-%d").date() if task.due_date else None
-            nd = e3.date_input("Due date", value=dv)
-            nb = st.text_area("Note", value=task.description, height=70)
 
-            f1, f2 = st.columns(2)
-            n_proj = f1.text_input("Project", value=task.project or "")
-            rec_opts = ["none", "daily", "weekly", "monthly"]
-            rec_val = task.recurring if task.recurring else "none"
-            n_rec = f2.selectbox("Repeat", rec_opts, index=rec_opts.index(rec_val))
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Main task layout
+    # ─────────────────────────────────────────────────────────────────────────────
+    is_manual = sort_by == "Manual"
 
-            _tag_opts = sorted(set(all_tags_global + list(task.tags)))
-            n_tags = st.multiselect("Tags (pick existing)", options=_tag_opts, default=list(task.tags))
-            n_new_tags = st.text_input("Add new tags (comma-separated)", placeholder="tag1, tag2…", key=f"newtags_{task.id}")
-
-            sc, cc, ac = st.columns(3)
-            sv = sc.form_submit_button("Save", use_container_width=True)
-            cn = cc.form_submit_button("Cancel", use_container_width=True)
-            arch = ac.form_submit_button(
-                "Archive" if not task.archived else "Unarchive",
-                use_container_width=True
-            )
-
-        if sv:
-            task.title = nt.strip() or task.title
-            task.description = nb.strip()
-            task.priority = np
-            task.due_date = str(nd) if nd else None
-            task.project = n_proj.strip() or None
-            task.recurring = n_rec if n_rec != "none" else None
-            _typed_tags = [t.strip() for t in n_new_tags.split(",") if t.strip()]
-            task.tags = list(dict.fromkeys(n_tags + _typed_tags))
-            task.updated_at = _now_iso()
-            update_task(task, STORAGE_PATH)
-            st.session_state[f"ed_{task.id}"] = False
-            st.rerun()
-        if cn:
-            st.session_state[f"ed_{task.id}"] = False
-            st.rerun()
-        if arch:
-            task.archived = not task.archived
-            task.updated_at = _now_iso()
-            update_task(task, STORAGE_PATH)
-            st.session_state[f"ed_{task.id}"] = False
-            st.rerun()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main task layout
-# ─────────────────────────────────────────────────────────────────────────────
-is_manual = sort_by == "Manual"
-
-if group_by_proj:
-    # ── Group by project ─────────────────────────────────────────────────────
-    projects_in_view = sorted(set(
-        (t.project or "(No project)") for t in working_tasks
-    ))
-    for proj in projects_in_view:
-        proj_tasks = [
-            t for t in working_tasks
-            if (t.project or "(No project)") == proj
-        ]
-        proj_todo = sorted([t for t in proj_tasks if t.status == "todo"], key=_sort_key)
-        proj_done = sorted([t for t in proj_tasks if t.status == "done"], key=_sort_key)
-        color = "#7c3aed"
-        st.html(f'<div class="section-label sl-proj">◈ {proj} <span style="color:#9ca3af;font-weight:400;">({len(proj_tasks)} tasks)</span></div>')
-        for task in proj_todo + proj_done:
-            render_card(task, all_tags_global, is_manual=is_manual)
-        st.html("<hr style='border-color:#e5e7eb;margin:1.5rem 0'>")
-
-else:
-    # ── Default: todo | done two-column layout ────────────────────────────────
-    left, mid, right = st.columns([0.47, 0.02, 0.47], gap="small")
-
-    with left:
-        st.html(f'<div class="section-label sl-todo">In Progress · {len(todo_tasks)}</div>')
-        if not todo_tasks:
-            st.html('<div class="empty-note"><div class="empty-icon">📋</div>Nothing pending — you\'re all caught up!</div>')
-        else:
-            for task in todo_tasks:
+    if group_by_proj:
+        # ── Group by project ─────────────────────────────────────────────────────
+        projects_in_view = sorted(set(
+            (t.project or "(No project)") for t in working_tasks
+        ))
+        for proj in projects_in_view:
+            proj_tasks = [
+                t for t in working_tasks
+                if (t.project or "(No project)") == proj
+            ]
+            proj_todo = sorted([t for t in proj_tasks if t.status == "todo"], key=_sort_key)
+            proj_done = sorted([t for t in proj_tasks if t.status == "done"], key=_sort_key)
+            color = "#7c3aed"
+            st.html(f'<div class="section-label sl-proj">◈ {proj} <span style="color:#9ca3af;font-weight:400;">({len(proj_tasks)} tasks)</span></div>')
+            for task in proj_todo + proj_done:
                 render_card(task, all_tags_global, is_manual=is_manual)
+            st.html("<hr style='border-color:#e5e7eb;margin:1.5rem 0'>")
 
-    with mid:
-        st.html('<div class="col-gap"></div>')
+    else:
+        # ── Default: todo | done two-column layout ────────────────────────────────
+        left, mid, right = st.columns([0.47, 0.02, 0.47], gap="small")
 
-    with right:
-        st.html(f'<div class="section-label sl-done">Completed · {len(done_tasks)}</div>')
-        if not done_tasks:
-            st.html('<div class="empty-note"><div class="empty-icon">✦</div>Complete a task to see it here</div>')
-        else:
-            for task in done_tasks:
-                render_card(task, all_tags_global, is_manual=is_manual)
+        with left:
+            st.html(f'<div class="section-label sl-todo">In Progress · {len(todo_tasks)}</div>')
+            if not todo_tasks:
+                st.html('<div class="empty-note"><div class="empty-icon">📋</div>Nothing pending — you\'re all caught up!</div>')
+            else:
+                for task in todo_tasks:
+                    render_card(task, all_tags_global, is_manual=is_manual)
+
+        with mid:
+            st.html('<div class="col-gap"></div>')
+
+        with right:
+            st.html(f'<div class="section-label sl-done">Completed · {len(done_tasks)}</div>')
+            if not done_tasks:
+                st.html('<div class="empty-note"><div class="empty-icon">✦</div>Complete a task to see it here</div>')
+            else:
+                for task in done_tasks:
+                    render_card(task, all_tags_global, is_manual=is_manual)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Export CSV
-# ─────────────────────────────────────────────────────────────────────────────
-st.html("<hr style='border-color:#e5e7eb;margin:2rem 0 1rem'>")
-exp_col, _ = st.columns([1, 4])
-with exp_col:
-    csv_data = _build_csv(all_tasks)
-    st.download_button(
-        label="⬇ Export CSV",
-        data=csv_data,
-        file_name=f"tasks_{today_str}.csv",
-        mime="text/csv",
-        key="export_csv",
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Export CSV
+    # ─────────────────────────────────────────────────────────────────────────────
+    st.html("<hr style='border-color:#e5e7eb;margin:2rem 0 1rem'>")
+    exp_col, _ = st.columns([1, 4])
+    with exp_col:
+        csv_data = _build_csv(all_tasks)
+        st.download_button(
+            label="⬇ Export CSV",
+            data=csv_data,
+            file_name=f"tasks_{today_str}.csv",
+            mime="text/csv",
+            key="export_csv",
+        )
+
+
+
+with tab2:
+    import calendar as _cal_mod
+
+    cy = st.session_state.cal_year
+    cm = st.session_state.cal_month
+
+    nav_l, nav_mid, nav_r = st.columns([1, 3, 1])
+    with nav_l:
+        if st.button("← Prev", key="cal_prev"):
+            if cm == 1:
+                st.session_state.cal_month = 12
+                st.session_state.cal_year = cy - 1
+            else:
+                st.session_state.cal_month -= 1
+            st.rerun()
+    with nav_mid:
+        st.html(
+            f'<div style="text-align:center;font-size:1.15rem;font-weight:700;'
+            f'color:#1c1c1e;padding:0.3rem 0;">'
+            f'{date(cy, cm, 1).strftime("%B %Y")}</div>'
+        )
+    with nav_r:
+        if st.button("Next →", key="cal_next"):
+            if cm == 12:
+                st.session_state.cal_month = 1
+                st.session_state.cal_year += 1
+            else:
+                st.session_state.cal_month += 1
+            st.rerun()
+
+    _tasks_by_date: dict = {}
+    for _ct in all_tasks:
+        if _ct.due_date and not _ct.archived:
+            _tasks_by_date.setdefault(_ct.due_date, []).append(_ct)
+
+    _PRIO = {
+        "high":   ("#fee2e2", "#dc2626"),
+        "medium": ("#fef3c7", "#d97706"),
+        "low":    ("#dcfce7", "#16a34a"),
+    }
+
+    _month_cal = _cal_mod.monthcalendar(cy, cm)
+    _day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    _hdr = "".join(
+        f'<div style="background:#f9fafb;padding:0.5rem 0.4rem;text-align:center;'
+        f'font-size:0.68rem;font-weight:700;color:#9ca3af;text-transform:uppercase;'
+        f'letter-spacing:0.07em;">{dn}</div>'
+        for dn in _day_names
     )
+
+    _cells = ""
+    for _week in _month_cal:
+        for _d in _week:
+            if _d == 0:
+                _cells += '<div style="background:#fafafa;min-height:95px;padding:0.4rem;"></div>'
+                continue
+            _ds    = f"{cy}-{cm:02d}-{_d:02d}"
+            _today = _ds == today_str
+            _dtasks = _tasks_by_date.get(_ds, [])
+            _bg  = "#eff6ff" if _today else "#ffffff"
+            _bt  = "3px solid #2563eb" if _today else "1px solid transparent"
+            _nc  = "#2563eb" if _today else "#374151"
+            _nfw = "800" if _today else "600"
+            _chips = ""
+            for _t in _dtasks[:3]:
+                _bc, _fc = _PRIO.get(_t.priority, ("#f3f4f6", "#6b7280"))
+                _ds2 = "text-decoration:line-through;opacity:0.55;" if _t.status == "done" else ""
+                _ttl = (_t.title[:20] + "…") if len(_t.title) > 20 else _t.title
+                _ttl = _ttl.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                _chips += (
+                    f'<div style="background:{_bc};color:{_fc};border-radius:4px;'
+                    f'padding:2px 5px;font-size:0.59rem;font-weight:600;margin-bottom:2px;'
+                    f'{_ds2}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_ttl}</div>'
+                )
+            if len(_dtasks) > 3:
+                _chips += f'<div style="font-size:0.58rem;color:#9ca3af;font-weight:500;">+{len(_dtasks)-3} more</div>'
+            _cells += (
+                f'<div style="background:{_bg};min-height:95px;padding:0.45rem;border-top:{_bt};">'
+                f'<div style="font-size:0.72rem;font-weight:{_nfw};color:{_nc};margin-bottom:0.3rem;">{_d}</div>'
+                f'{_chips}</div>'
+            )
+
+    st.html(f"""
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;
+            padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-top:0.5rem;">
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);
+              gap:1px;background:#e5e7eb;border-radius:10px;overflow:hidden;">
+    {_hdr}{_cells}
+  </div>
+</div>
+<div style="display:flex;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;align-items:center;">
+  <span style="font-size:0.68rem;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Priority:</span>
+  <span style="background:#fee2e2;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:0.65rem;font-weight:700;">High</span>
+  <span style="background:#fef3c7;color:#d97706;border-radius:4px;padding:2px 8px;font-size:0.65rem;font-weight:700;">Medium</span>
+  <span style="background:#dcfce7;color:#16a34a;border-radius:4px;padding:2px 8px;font-size:0.65rem;font-weight:700;">Low</span>
+  <span style="font-size:0.68rem;color:#9ca3af;margin-left:0.5rem;">Strikethrough = completed</span>
+</div>
+""")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
